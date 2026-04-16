@@ -86,7 +86,7 @@
     - 예외 처리: IOException, UnauthorizedAccessException 등 처리
 
 ## 배운 내용
-- ListViewItem.Tag에 FileInfo/DirectoryInfo 저장 후 타입 패턴(`is`)으로 파일/폴더 판별하는 패턴을 배웠음
+- ListViewItem.Tag에 FileInfo/DirectoryInfo 저장 후 타입 패턴(is)으로 파일/폴더 판별하는 패턴을 배웠음
 - 파일/폴더의 LastWriteTime으로 동기화/충돌 검출 로직 구현
 - 재귀적 디렉터리 복사 구현과 덮어쓰기 전 사용자 확인 흐름 구현
 - UI 레이아웃: SplitContainer와 여러 Panel 조합으로 상단 타이틀/폴더선택 영역 분리하여 깔끔한 레이아웃 구성
