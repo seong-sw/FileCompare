@@ -71,24 +71,24 @@ namespace FileCompare
 
         private void FolderDialogButton_Click(TextBox dir, ListView lv)
         {
-                using (var dlg = new FolderBrowserDialog())
+            using (var dlg = new FolderBrowserDialog())
+            {
+                dlg.Description = "폴더를 선택하세요.";
+                if (!string.IsNullOrWhiteSpace(dir.Text) && Directory.Exists(dir.Text))
                 {
-                    dlg.Description = "폴더를 선택하세요.";
-                    if (!string.IsNullOrWhiteSpace(dir.Text) && Directory.Exists(dir.Text))
-                    {
-                        dlg.SelectedPath = dir.Text;
-                    }
-                    if (dlg.ShowDialog() == DialogResult.OK)
-                    {
-                        dir.Text = dlg.SelectedPath;
-                        PopulateListView(lv, dlg.SelectedPath);
+                    dlg.SelectedPath = dir.Text;
+                }
+                if (dlg.ShowDialog() == DialogResult.OK)
+                {
+                    dir.Text = dlg.SelectedPath;
+                    PopulateListView(lv, dlg.SelectedPath);
 
-                        if (!string.IsNullOrWhiteSpace(txtLeftDir.Text) && Directory.Exists(txtLeftDir.Text)
-                            && !string.IsNullOrWhiteSpace(txtRightDir.Text) && Directory.Exists(txtRightDir.Text))
-                        {
-                            CompareListViews();
-                        }
+                    if (!string.IsNullOrWhiteSpace(txtLeftDir.Text) && Directory.Exists(txtLeftDir.Text)
+                        && !string.IsNullOrWhiteSpace(txtRightDir.Text) && Directory.Exists(txtRightDir.Text))
+                    {
+                        CompareListViews();
                     }
+                }
             }
         }
 
@@ -183,46 +183,99 @@ namespace FileCompare
 
             if (srcLv.SelectedItems.Count == 0)
             {
-                MessageBox.Show("복사할 파일을 선택하세요.", "알림", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show("복사할 항목을 선택하세요.", "알림", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
 
             var sel = srcLv.SelectedItems[0];
-            if (!(sel.Tag is FileInfo srcFile))
-            {
-                MessageBox.Show("파일만 복사할 수 있습니다. 폴더는 지원되지 않습니다.", "알림", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                return;
-            }
 
-            var srcPath = Path.Combine(srcDir, srcFile.Name);
-            var dstPath = Path.Combine(dstDir, srcFile.Name);
-
-            try
+            if (sel.Tag is FileInfo fi)
             {
-                if (File.Exists(dstPath))
+                var srcPath = Path.Combine(srcDir, fi.Name);
+                var dstPath = Path.Combine(dstDir, fi.Name);
+
+                try
                 {
-                    var dstFile = new FileInfo(dstPath);
-
-                    if (dstFile.LastWriteTime > srcFile.LastWriteTime)
+                    if (File.Exists(dstPath))
                     {
-                        var msg = $"대상 파일이 더 최신입니다. 덮어쓰시겠습니까?\n\n원본: {srcFile.LastWriteTime:G}\n대상: {dstFile.LastWriteTime:G}";
-                        var dr = MessageBox.Show(msg, "덮어쓰기 확인", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
-                        if (dr != DialogResult.Yes) return;
+                        var dstFile = new FileInfo(dstPath);
+                        if (dstFile.LastWriteTime > fi.LastWriteTime)
+                        {
+                            var result = MessageBox.Show($"대상 파일이 원본보다 최신입니다. 덮어쓰시겠습니까?\n\n원본: {fi.LastWriteTime:g}\n대상: {dstFile.LastWriteTime:g}", "확인", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+                            if (result != DialogResult.Yes) return;
+                        }
                     }
+
+                    File.Copy(srcPath, dstPath, true);
                 }
-
-                File.Copy(srcPath, dstPath, true);
-
-                PopulateListView(dstLv, dstDir);
-                if (!string.IsNullOrWhiteSpace(txtLeftDir.Text) && Directory.Exists(txtLeftDir.Text)
-                    && !string.IsNullOrWhiteSpace(txtRightDir.Text) && Directory.Exists(txtRightDir.Text))
+                catch (IOException e)
                 {
-                    CompareListViews();
+                    MessageBox.Show($"파일 복사 중 오류가 발생했습니다: {e.Message}", "오류", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             }
-            catch (Exception e)
+            else if (sel.Tag is DirectoryInfo di)
             {
-                MessageBox.Show($"파일 복사 중 오류가 발생했습니다: {e.Message}", "오류", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                var srcPath = Path.Combine(srcDir, di.Name);
+                var dstPath = Path.Combine(dstDir, di.Name);
+
+                try
+                {
+                    if (Directory.Exists(dstPath))
+                    {
+                        var dstDirInfo = new DirectoryInfo(dstPath);
+                        if (dstDirInfo.LastWriteTime > di.LastWriteTime)
+                        {
+                            var result = MessageBox.Show($"대상 폴더가 원본보다 최신입니다. 덮어쓰시겠습니까?\n\n원본: {di.LastWriteTime:g}\n대상: {dstDirInfo.LastWriteTime:g}", "확인", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+                            if (result != DialogResult.Yes) return;
+                        }
+                    }
+
+                        DirectoryCopy(srcPath, dstPath, true);
+                }
+                catch (IOException e)
+                {
+                    MessageBox.Show($"폴더 복사 중 오류가 발생했습니다: {e.Message}", "오류", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+                catch (UnauthorizedAccessException e)
+                {
+                    MessageBox.Show($"권한 오류: {e.Message}", "오류", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+
+            PopulateListView(lvwLeftDir, srcDir);
+            PopulateListView(lvwRightDir, dstDir);
+            CompareListViews();
+        }
+
+        private void DirectoryCopy(string sourceDir, string destDir, bool overwrite)
+        {
+            var dir = new DirectoryInfo(sourceDir);
+            if (!dir.Exists) throw new DirectoryNotFoundException(sourceDir);
+
+            if (!Directory.Exists(destDir)) Directory.CreateDirectory(destDir);
+
+            foreach (var file in dir.GetFiles())
+            {
+                string targetFilePath = Path.Combine(destDir, file.Name);
+                bool doCopy = overwrite;
+                if (File.Exists(targetFilePath))
+                {
+                    var dstInfo = new FileInfo(targetFilePath);
+
+                    if (file.LastWriteTime > dstInfo.LastWriteTime) doCopy = true;
+                    else doCopy = overwrite;
+                }
+                if (doCopy)
+                {
+                    file.CopyTo(targetFilePath, true);
+                }
+            }
+
+            foreach (var subdir in dir.GetDirectories())
+            {
+                string newDestDir = Path.Combine(destDir, subdir.Name);
+                if (!Directory.Exists(newDestDir)) Directory.CreateDirectory(newDestDir);
+                DirectoryCopy(subdir.FullName, newDestDir, overwrite);
             }
         }
     }
