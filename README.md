@@ -71,20 +71,22 @@
 ![과제4 실행화면](img/screenshot-4.png)
 
 - 과제 내용
-    - 디렉터리(폴더) 전체 복사 기능 구현(하위 폴더 포함)
-    - 복사 전 대상에 소스보다 최신인 파일이 있는지 검사하여 사용자에게 경고 및 확인
+    - 하위폴더에 대해서 한 방에 비교, 복사가 가능하도록 개선
+        - 하위폴더를 하나의 파일처럼 처리
+        - 적절하게 색상 표시
+        - 뵥사 버튼 누르면 하위폴더의 모든 내용 (파일과 하위폴더 포함) 처리
 
 - 구현 내용과 기능 설명
     - 디렉터리 복사 흐름
-        - `DirectoryCopy(sourceDir, destDir, overwrite)` — 재귀적으로 디렉터리 생성 및 파일 복사
-        - `FindDestinationNewerFiles(srcDir, dstDir)` — 소스 기준으로 대상에서 더 최신인 파일 목록을 수집
+        - DirectoryCopy(sourceDir, destDir, overwrite) — 재귀적으로 디렉터리 생성 및 파일 복사
+        - FindDestinationNewerFiles(srcDir, dstDir) — 소스 기준으로 대상에서 더 최신인 파일 목록을 수집
         - 대상에 더 최신 파일이 하나라도 있으면 갯수와 예시 파일명을 표시한 확인 대화상자 표시
-        - 사용자가 확인하면 `DirectoryCopy`로 재귀 복사(파일 덮어쓰기 허용)
+        - 사용자가 확인하면 DirectoryCopy로 재귀 복사(파일 덮어쓰기 허용)
         - 복사 완료 후 대상 루트 목록 갱신 및 재비교 수행
-    - 예외 처리: `IOException`, `UnauthorizedAccessException` 등 처리
+    - 예외 처리: IOException, UnauthorizedAccessException 등 처리
 
 ## 배운 내용
-- `ListViewItem.Tag`에 `FileInfo`/`DirectoryInfo` 저장 후 타입 패턴(`is`)으로 파일/폴더 판별하는 패턴을 배웠음
-- 파일/폴더의 `LastWriteTime`으로 동기화/충돌 검출 로직 구현
+- ListViewItem.Tag에 FileInfo/DirectoryInfo 저장 후 타입 패턴(`is`)으로 파일/폴더 판별하는 패턴을 배웠음
+- 파일/폴더의 LastWriteTime으로 동기화/충돌 검출 로직 구현
 - 재귀적 디렉터리 복사 구현과 덮어쓰기 전 사용자 확인 흐름 구현
-- UI 레이아웃: `SplitContainer`와 여러 `Panel` 조합으로 상단 타이틀/폴더선택 영역 분리하여 깔끔한 레이아웃 구성
+- UI 레이아웃: SplitContainer와 여러 Panel 조합으로 상단 타이틀/폴더선택 영역 분리하여 깔끔한 레이아웃 구성
