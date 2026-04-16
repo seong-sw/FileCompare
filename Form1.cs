@@ -155,12 +155,75 @@ namespace FileCompare
 
         private void btnCopyFromLeft_Click(object sender, EventArgs e)
         {
-
+            CopySelectedFile(true);
         }
 
         private void btnCopyFromRight_Click(object sender, EventArgs e)
         {
+            CopySelectedFile(false);
+        }
 
+        private void CopySelectedFile(bool fromLeft)
+        {
+            var srcLv = fromLeft ? lvwLeftDir : lvwRightDir;
+            var dstLv = fromLeft ? lvwRightDir : lvwLeftDir;
+            var srcDir = fromLeft ? txtLeftDir.Text : txtRightDir.Text;
+            var dstDir = fromLeft ? txtRightDir.Text : txtLeftDir.Text;
+
+            if (string.IsNullOrWhiteSpace(srcDir) || !Directory.Exists(srcDir))
+            {
+                MessageBox.Show("원본 폴더를 먼저 선택하세요.", "경고", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+            if (string.IsNullOrWhiteSpace(dstDir) || !Directory.Exists(dstDir))
+            {
+                MessageBox.Show("대상 폴더를 먼저 선택하세요.", "경고", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            if (srcLv.SelectedItems.Count == 0)
+            {
+                MessageBox.Show("복사할 파일을 선택하세요.", "알림", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            var sel = srcLv.SelectedItems[0];
+            if (!(sel.Tag is FileInfo srcFile))
+            {
+                MessageBox.Show("파일만 복사할 수 있습니다. 폴더는 지원되지 않습니다.", "알림", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            var srcPath = Path.Combine(srcDir, srcFile.Name);
+            var dstPath = Path.Combine(dstDir, srcFile.Name);
+
+            try
+            {
+                if (File.Exists(dstPath))
+                {
+                    var dstFile = new FileInfo(dstPath);
+
+                    if (dstFile.LastWriteTime > srcFile.LastWriteTime)
+                    {
+                        var msg = $"대상 파일이 더 최신입니다. 덮어쓰시겠습니까?\n\n원본: {srcFile.LastWriteTime:G}\n대상: {dstFile.LastWriteTime:G}";
+                        var dr = MessageBox.Show(msg, "덮어쓰기 확인", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
+                        if (dr != DialogResult.Yes) return;
+                    }
+                }
+
+                File.Copy(srcPath, dstPath, true);
+
+                PopulateListView(dstLv, dstDir);
+                if (!string.IsNullOrWhiteSpace(txtLeftDir.Text) && Directory.Exists(txtLeftDir.Text)
+                    && !string.IsNullOrWhiteSpace(txtRightDir.Text) && Directory.Exists(txtRightDir.Text))
+                {
+                    CompareListViews();
+                }
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show($"파일 복사 중 오류가 발생했습니다: {e.Message}", "오류", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
     }
 }

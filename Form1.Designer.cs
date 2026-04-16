@@ -231,7 +231,7 @@
             btnCopyFromRight.Name = "btnCopyFromRight";
             btnCopyFromRight.Size = new Size(84, 45);
             btnCopyFromRight.TabIndex = 3;
-            btnCopyFromRight.Text = ">>>";
+            btnCopyFromRight.Text = "<<<";
             btnCopyFromRight.Click += btnCopyFromRight_Click;
             // 
             // txtRightDir
